@@ -14,30 +14,50 @@ public class Main {
     private static final Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
-        Stamp stamp = createStamp();
+        Stamp stamp;
+        try {
+            stamp = createStamp();
+        } catch (IllegalArgumentException e) {
+            System.out.println(e.getMessage());
+            return;
+        }
 
         System.out.print("Input PDF path for input: ");
         String pdfInputPath = scanner.nextLine();
 
-        System.out.print("Input PDF path for output: ");
-        String pdfOutputPath = scanner.nextLine();
-
+        PdfReader pdfReader = null;
+        PdfStamper pdfStamper = null;
         try {
-            PdfReader pdfReader = new PdfReader(pdfInputPath);
-            PdfStamper pdfStamper = new PdfStamper(pdfReader, new FileOutputStream(pdfOutputPath));
+            pdfReader = new PdfReader(pdfInputPath);
+
+            System.out.print("Input PDF path for output: ");
+            String pdfOutputPath = scanner.nextLine();
+            pdfStamper = new PdfStamper(pdfReader, new FileOutputStream(pdfOutputPath));
 
             addImageToPDF(pdfStamper, stamp);
         }  catch (IOException | DocumentException e) {
             System.out.println(e.getMessage());
+        } finally {
+            if (pdfReader != null) {
+                pdfReader.close();
+            }
+            if (pdfStamper != null) {
+                try {
+                    pdfStamper.close();
+                } catch (DocumentException | IOException e) {
+                    System.out.println(e.getMessage());
+                }
+            }
         }
     }
 
-    public static Stamp createStamp() {
+    public static Stamp createStamp() throws IllegalArgumentException {
         String signature;
         do {
             System.out.print("Input signature (2-3 letters): ");
             signature = scanner.nextLine();
         } while (signature.length() > 3 || signature.length() < 2);
+
         return new Stamp(signature);
     }
 
@@ -48,14 +68,12 @@ public class Main {
         PdfContentByte pdfContentByte = pdfStamper.getOverContent(1);
 
         Image image = Image.getInstance(stamp.getOutputPath());
-        float desiredWidth = 70;
-        float desiredHeight = 70;
+        float desiredWidth = 80;
+        float desiredHeight = 80;
         image.scaleAbsolute(desiredWidth, desiredHeight);
-        image.setAbsolutePosition(60, 100);
+        image.setAbsolutePosition(60, 90);
         pdfContentByte.addImage(image);
 
-        pdfStamper.close();
-
-        System.out.println("Image added to the PDF successfully!");
+        System.out.println("Stamp successfully added to the PDF");
     }
 }
